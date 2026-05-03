@@ -2,12 +2,12 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from .BaseResponse import BaseResponse
-class BusinessLogicError(Exception):
+class AppBaseException(Exception):
     def __init__(self, message: str, status_code: int = 400):
         self.message = message
         self.status_code = status_code
 
-async def business_exception_handler(request: Request, exc: BusinessLogicError):
+async def business_exception_handler(request: Request, exc: AppBaseException):
     return JSONResponse(
         status_code=exc.status_code,
         content=BaseResponse(
@@ -52,6 +52,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 def setup_exception_handlers(app):
-    app.add_exception_handler(BusinessLogicError, business_exception_handler)
+    app.add_exception_handler(AppBaseException, business_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)

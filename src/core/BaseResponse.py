@@ -31,6 +31,7 @@ class WrappedAPIRoute(APIRoute):
                 return JSONResponse(
                     status_code=data.status_code,
                     content=wrapped.model_dump(),
+                    background=data.background
                 )
 
             # Pass through non-JSON responses (FileResponse, StreamingResponse, etc.)
