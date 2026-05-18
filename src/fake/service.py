@@ -45,7 +45,7 @@ class FakeService:
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             
             with open(file_path, mode='w', newline='') as f:
-                writer = csv.DictWriter(f, fieldnames=["payment_id", "date", "amount", "status", "currency"])
+                writer = csv.DictWriter(f, fieldnames=["payment_id", "created_at", "amount", "status", "currency"])
                 writer.writeheader()
                 writer.writerows(records)
             
@@ -63,7 +63,7 @@ class FakeService:
         
         return {
             "payment_id": f"PAY-{random.randint(100000, 999999)}",
-            "date": payment_date.strftime("%Y-%m-%d %H:%M:%S"),
+            "created_at": payment_date.strftime("%Y-%m-%d %H:%M:%S"),
             "amount": round(random.uniform(10.0, 1000.0), 2),
             "status": status,
             "currency": "USD"

@@ -1,10 +1,12 @@
+from typing import Optional
+
 from pydantic import BaseModel, model_validator
 
 class PaymentRequest(BaseModel):
-    dateStart: str | None = None
-    dateEnd: str | None = None
-    payment_status: str | None = None
-    payment_status_bulk_count: int | None = None
+    dateStart: Optional[str] = None
+    dateEnd: Optional[str] = None
+    payment_status: Optional[str] = None
+    payment_status_bulk_count: Optional[int] = None
 
     @model_validator(mode='after')
     def validate_payment_request(self) -> 'PaymentRequest':

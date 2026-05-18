@@ -4,9 +4,13 @@ from ..core.AppExceptions import AppBaseException
 
 async def validated_file(
     files: List[UploadFile] = File(..., description="List of files to upload (max 3 files)"),
-    domain: Literal['email', 'policy', 'payment', 'ticket', 'feature'] = Form(..., description="Description of the upload")
+    domain: Literal['email', 'policy', 'payment', 'ticket', 'feature', 'report'] = Form(..., description="Description of the upload"),
+    creation_date: str = Form(None, description="Creation date of the document"),
+    isLegacy: bool = Form(False),
+    status: Literal['active', 'inactive'] = Form('active'),
+    department: str = Form(None),
+    project_codename: str = Form(None)
 ) -> dict:
-    MAX_SIZE = 1024 * 1024  # 1MB
     
     if not files or len(files) == 0:
         raise AppBaseException("At least one file must be provided", 400)
@@ -17,9 +21,15 @@ async def validated_file(
     if not domain or len(domain.strip()) == 0:
         raise AppBaseException("domain cannot be empty", 400)
         
-    for file in files:
-        # file.size is available in FastAPI 0.99.0+
-        if file.size is not None and file.size > MAX_SIZE:
-            raise AppBaseException(f"File {file.filename} is too large. Max size is 1MB.", 400) 
-            
-    return {"files": files, "domain": domain}
+    if domain == 'policy' and (not creation_date or len(creation_date.strip()) == 0):
+        raise AppBaseException("creation_date is mandatory for policy documents", 400)
+
+    return {
+        "files": files,
+        "domain": domain,
+        "creation_date": creation_date,
+        "isLegacy": isLegacy,
+        "status": status,
+        "department": department,
+        "project_codename": project_codename
+    }

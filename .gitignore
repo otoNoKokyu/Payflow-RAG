@@ -1,4 +1,36 @@
-RawData
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Python compiled files
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS generated files
+.DS_Store
+**/.DS_Store
+
+# IDE and Editor files
+.vscode/
+pyrightconfig.json
+
+# Logs and Debug
+debug.info
+*.log
+
+# Project specific ignores
+data/
+chunks/
+problems/
 prompt.md
-__pycache__
-to-be-uploaded
+to-be-uploaded/
+scratch/
+test_policy_chunking.py
+src/fake/
+fileProcessing/
+src/fileProccessing/

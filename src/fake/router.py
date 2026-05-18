@@ -21,10 +21,11 @@ def create_payment(data: PaymentRequest, background_tasks: BackgroundTasks):
     else:
         dt = datetime.now()
     
+    # Define the output file path in src/data/payment
     filename = f"{dt.strftime('%B_%Y')}_payments.csv"
-    
-    # Define the output file path using the dynamic filename
-    file_path = os.path.join(os.path.dirname(__file__), filename)
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data/payment"))
+    os.makedirs(base_dir, exist_ok=True)
+    file_path = os.path.join(base_dir, filename)
     
     # Schedule the generation as a background task
     background_tasks.add_task(FakeService.generate_payment_csv, data, file_path)

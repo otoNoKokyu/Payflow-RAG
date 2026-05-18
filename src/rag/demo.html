@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payflow RAG Dashboard</title>
+    <meta name="description" content="Payflow RAG — AI-Powered Document Upload & Query System">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #22d3ee;
+            --success: #34d399;
+            --danger: #f87171;
+            --warning: #fbbf24;
+            --glass: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99,102,241,0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(34,211,238,0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .container { width: 100%; max-width: 860px; animation: fadeIn .6s ease-out; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ── Header ── */
+        header { text-align: center; margin-bottom: 2rem; }
+        h1 {
+            font-family: 'Outfit', sans-serif; font-size: 2.5rem; margin-bottom: .4rem;
+            background: linear-gradient(to right, #818cf8, #22d3ee);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle { color: var(--text-muted); font-size: 1.05rem; }
+
+        /* ── Tabs ── */
+        .tab-bar {
+            display: flex; gap: .5rem; margin-bottom: 1.5rem;
+            background: rgba(15,23,42,.5); border-radius: 1rem; padding: .35rem;
+            border: 1px solid var(--border);
+        }
+        .tab-btn {
+            flex: 1; padding: .7rem 1rem; border: none; border-radius: .75rem;
+            font-family: 'Inter', sans-serif; font-weight: 600; font-size: .95rem;
+            cursor: pointer; transition: all .25s; background: transparent; color: var(--text-muted);
+        }
+        .tab-btn.active { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,.4); }
+        .tab-btn:not(.active):hover { color: var(--text-main); background: rgba(255,255,255,.05); }
+        .tab-panel { display: none; animation: fadeIn .35s ease-out; }
+        .tab-panel.active { display: block; }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--glass); backdrop-filter: blur(12px);
+            border: 1px solid var(--border); padding: 2rem; border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,.5); margin-bottom: 1.5rem;
+        }
+
+        /* ── Form Controls ── */
+        label { display:block; margin-bottom:.4rem; font-weight:500; color:var(--text-muted); font-size:.85rem; text-transform:uppercase; letter-spacing:.05em; }
+        textarea, input[type="text"], input[type="date"], select {
+            width:100%; padding:.8rem 1rem; border-radius:.75rem;
+            background:rgba(15,23,42,.6); border:1px solid var(--border);
+            color:#fff; font-family:inherit; font-size:.95rem; transition:all .2s;
+        }
+        textarea { resize:vertical; min-height:100px; }
+        textarea:focus, input:focus, select:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,.2); }
+        select { cursor:pointer; }
+        .input-group { margin-bottom: 1.25rem; }
+        .row { display:flex; gap:1rem; flex-wrap:wrap; }
+        .row > * { flex:1; min-width:180px; }
+
+        /* ── Toggle ── */
+        .toggle-row { display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem; }
+        .toggle { position:relative; width:44px; height:24px; cursor:pointer; }
+        .toggle input { opacity:0; width:0; height:0; }
+        .toggle .slider {
+            position:absolute; inset:0; background:rgba(255,255,255,.1); border-radius:12px; transition:.3s;
+        }
+        .toggle .slider::before {
+            content:''; position:absolute; width:18px; height:18px; left:3px; bottom:3px;
+            background:#fff; border-radius:50%; transition:.3s;
+        }
+        .toggle input:checked + .slider { background:var(--primary); }
+        .toggle input:checked + .slider::before { transform:translateX(20px); }
+
+        /* ── Buttons ── */
+        .btn {
+            background:linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color:#fff; border:none; padding:.75rem 2rem; border-radius:.75rem;
+            font-weight:600; font-size:1rem; cursor:pointer; transition:all .2s;
+            box-shadow:0 10px 15px -3px rgba(99,102,241,.4); display:inline-flex; align-items:center; gap:.5rem;
+        }
+        .btn:hover { transform:translateY(-2px); box-shadow:0 20px 25px -5px rgba(99,102,241,.4); }
+        .btn:active { transform:translateY(0); }
+        .btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+        .btn-success { background:linear-gradient(135deg, #059669, #047857); box-shadow:0 10px 15px -3px rgba(5,150,105,.4); }
+        .controls { display:flex; gap:1.5rem; align-items:flex-end; flex-wrap:wrap; }
+        .controls .btn { margin-left:auto; }
+
+        /* ── Drop Zone ── */
+        .drop-zone {
+            border:2px dashed rgba(255,255,255,.15); border-radius:1rem; padding:2.5rem 1.5rem;
+            text-align:center; cursor:pointer; transition:all .25s; margin-bottom:1.25rem;
+            background:rgba(15,23,42,.3);
+        }
+        .drop-zone:hover, .drop-zone.dragover { border-color:var(--primary); background:rgba(99,102,241,.05); }
+        .drop-zone-icon { font-size:2.5rem; margin-bottom:.5rem; }
+        .drop-zone-text { color:var(--text-muted); font-size:.95rem; }
+        .drop-zone-text strong { color:var(--primary); }
+
+        /* ── File List ── */
+        .file-list { display:flex; flex-direction:column; gap:.5rem; margin-bottom:1.25rem; }
+        .file-item {
+            display:flex; align-items:center; gap:.75rem; padding:.6rem 1rem;
+            background:rgba(15,23,42,.4); border-radius:.75rem; border:1px solid var(--border);
+        }
+        .file-item .file-icon { font-size:1.2rem; }
+        .file-item .file-name { flex:1; font-size:.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .file-item .file-size { color:var(--text-muted); font-size:.8rem; }
+        .file-item .file-remove {
+            background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem;
+            padding:.2rem .4rem; border-radius:.5rem; transition:background .2s;
+        }
+        .file-item .file-remove:hover { background:rgba(248,113,113,.1); }
+
+        /* ── Result Card (Query) ── */
+        #queryResult { display:none; animation:fadeIn .4s ease-out; }
+        .result-card { background:var(--glass); backdrop-filter:blur(12px); border:1px solid var(--border); padding:2rem; border-radius:1.5rem; margin-top:1.5rem; }
+        .result-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--border); }
+        .result-title { font-weight:600; font-size:1.2rem; color:var(--accent); }
+        .token-badge {
+            background:rgba(34,211,238,.1); color:var(--accent); padding:.25rem .75rem;
+            border-radius:1rem; font-size:.8rem; font-weight:600; border:1px solid rgba(34,211,238,.2);
+            display:flex; align-items:center; gap:.4rem;
+        }
+        .rewrite-info {
+            background:rgba(99,102,241,.1); border:1px solid rgba(99,102,241,.2);
+            border-radius:.75rem; padding:.75rem 1rem; margin-bottom:1rem; font-size:.9rem; display:none;
+        }
+        .rewrite-label { color:var(--primary); font-weight:600; margin-bottom:.25rem; text-transform:uppercase; font-size:.75rem; letter-spacing:.05em; }
+        .rewrite-text { color:var(--text-main); font-style:italic; }
+        .answer-content { line-height:1.6; font-size:1.05rem; white-space:pre-wrap; }
+        .chunks-section { margin-top:2rem; padding-top:2rem; border-top:1px solid var(--border); }
+        .chunk { background:rgba(15,23,42,.4); padding:1rem; border-radius:.75rem; margin-bottom:1rem; font-size:.9rem; color:var(--text-muted); border-left:3px solid var(--primary); }
+
+        /* ── Loader ── */
+        .loader { display:none; width:24px; height:24px; border:3px solid rgba(255,255,255,.3); border-radius:50%; border-top-color:#fff; animation:spin 1s linear infinite; margin:2rem auto; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        /* ── Toast ── */
+        .toast-container { position:fixed; top:1.5rem; right:1.5rem; z-index:1000; display:flex; flex-direction:column; gap:.75rem; }
+        .toast {
+            padding:1rem 1.5rem; border-radius:.75rem; font-size:.9rem; font-weight:500;
+            backdrop-filter:blur(12px); border:1px solid var(--border);
+            animation:slideIn .35s ease-out; min-width:280px; display:flex; align-items:center; gap:.75rem;
+            box-shadow:0 10px 25px rgba(0,0,0,.4);
+        }
+        .toast.success { background:rgba(5,150,105,.85); color:#fff; }
+        .toast.error { background:rgba(220,38,38,.85); color:#fff; }
+        .toast.fadeOut { animation:fadeOut .3s ease-in forwards; }
+        @keyframes slideIn { from { opacity:0; transform:translateX(60px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes fadeOut { to { opacity:0; transform:translateX(60px); } }
+
+        /* ── Checkbox ── */
+        .checkbox-group { display:flex; align-items:center; gap:.5rem; cursor:pointer; user-select:none; }
+
+        /* ── Responsive ── */
+        @media (max-width:600px) {
+            body { padding:1rem; }
+            h1 { font-size:1.8rem; }
+            .controls { flex-direction:column; align-items:stretch; }
+            .controls .btn { margin-left:0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Payflow RAG</h1>
+            <p class="subtitle">AI-Powered Document Upload &amp; Query System</p>
+        </header>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <button class="tab-btn active" id="tabQuery" onclick="switchTab('query')">
+                <span>&#128269;</span> Query
+            </button>
+            <button class="tab-btn" id="tabUpload" onclick="switchTab('upload')">
+                <span>&#128228;</span> Upload
+            </button>
+        </div>
+
+        <!-- ═══════════════════ QUERY TAB ═══════════════════ -->
+        <div class="tab-panel active" id="panelQuery">
+            <div class="card">
+                <div class="input-group">
+                    <label for="question">Your Question</label>
+                    <textarea id="question" placeholder="e.g. What is the legacy support policy for pre-2024 migrations?"></textarea>
+                </div>
+                <div class="controls">
+                    <div>
+                        <label for="queryDomain">Domain</label>
+                        <select id="queryDomain">
+                            <option value="policy">Policy Documents</option>
+                            <option value="payment">Payment Data</option>
+                            <option value="report">Reports</option>
+                        </select>
+                    </div>
+                    <div class="checkbox-group" onclick="document.getElementById('showChunks').click()">
+                        <input type="checkbox" id="showChunks">
+                        <label style="margin-bottom:0;cursor:pointer;">Show Sources</label>
+                    </div>
+                    <div class="checkbox-group" onclick="document.getElementById('showDebug').click()">
+                        <input type="checkbox" id="showDebug">
+                        <label style="margin-bottom:0;cursor:pointer;">Debug Mode</label>
+                    </div>
+                    <button class="btn" id="queryBtn" onclick="submitQuery()">Ask Question</button>
+                </div>
+            </div>
+            <div class="loader" id="queryLoader"></div>
+            <div id="queryResult">
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="result-title">AI Answer</div>
+                        <div class="token-badge" id="tokenBadge" style="display:none;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                            <span id="tokenCount">0</span> tokens
+                        </div>
+                    </div>
+                    <div class="rewrite-info" id="rewriteInfo">
+                        <div class="rewrite-label">Optimized Query</div>
+                        <div class="rewrite-text" id="rewriteText"></div>
+                    </div>
+                    <div class="answer-content" id="answerContent"></div>
+                    <div id="chunksContainer" class="chunks-section" style="display:none;">
+                        <label>Retrieved Context Chunks</label>
+                        <div id="chunksList"></div>
+                    </div>
+                    <div id="debugContainer" class="chunks-section" style="display:none;border-top:1px dashed rgba(255,255,255,0.15);">
+                        <label style="color:var(--warning);">Pipeline Debug Info</label>
+                        <div id="debugContent" style="font-family:monospace;font-size:0.85rem;background:rgba(0,0,0,0.3);padding:1rem;border-radius:0.75rem;white-space:pre-wrap;color:var(--warning);line-height:1.4;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════ UPLOAD TAB ═══════════════════ -->
+        <div class="tab-panel" id="panelUpload">
+            <div class="card">
+                <!-- Drop Zone -->
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-icon">&#128195;</div>
+                    <div class="drop-zone-text">
+                        Drag &amp; drop files here, or <strong>click to browse</strong><br>
+                        <small style="color:var(--text-muted);">Max 3 files &middot; PDF, DOCX, TXT, CSV</small>
+                    </div>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.docx,.txt,.csv,.xlsx" style="display:none;">
+                </div>
+
+                <!-- File List -->
+                <div class="file-list" id="fileList"></div>
+
+                <!-- Domain -->
+                <div class="input-group">
+                    <label for="uploadDomain">Domain</label>
+                    <select id="uploadDomain" onchange="onDomainChange()">
+                        <option value="policy">Policy</option>
+                        <option value="payment">Payment</option>
+                        <option value="report">Report</option>
+                        <option value="email">Email</option>
+                        <option value="ticket">Ticket</option>
+                        <option value="feature">Feature</option>
+                    </select>
+                </div>
+
+                <!-- Metadata Fields -->
+                <div class="row">
+                    <div class="input-group" id="creationDateGroup">
+                        <label for="creationDate">Creation Date <span id="dateRequired" style="color:var(--danger);">*</span></label>
+                        <input type="date" id="creationDate">
+                    </div>
+                    <div class="input-group">
+                        <label for="uploadStatus">Status</label>
+                        <select id="uploadStatus">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <label class="toggle">
+                        <input type="checkbox" id="isLegacy">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="font-size:.9rem;">Legacy Document</span>
+                </div>
+
+                <div class="row">
+                    <div class="input-group">
+                        <label for="department">Department</label>
+                        <input type="text" id="department" placeholder="e.g. support, finance">
+                    </div>
+                    <div class="input-group">
+                        <label for="projectCodename">Project Codename</label>
+                        <input type="text" id="projectCodename" placeholder="Optional">
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;margin-top:.5rem;">
+                    <button class="btn btn-success" id="uploadBtn" onclick="submitUpload()">
+                        <span>&#128640;</span> Upload &amp; Ingest
+                    </button>
+                </div>
+            </div>
+            <div class="loader" id="uploadLoader"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ── Tab Switching ──
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            if (tab === 'query') {
+                document.getElementById('tabQuery').classList.add('active');
+                document.getElementById('panelQuery').classList.add('active');
+            } else {
+                document.getElementById('tabUpload').classList.add('active');
+                document.getElementById('panelUpload').classList.add('active');
+            }
+        }
+
+        // ── Toast Notifications ──
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<span>${type === 'success' ? '&#10003;' : '&#10007;'}</span> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.add('fadeOut'); setTimeout(() => toast.remove(), 300); }, 4000);
+        }
+
+        // ═══════════════════ QUERY LOGIC ═══════════════════
+        async function submitQuery() {
+            const question = document.getElementById('question').value;
+            const type = document.getElementById('queryDomain').value;
+            const chunks = document.getElementById('showChunks').checked;
+            const debug = document.getElementById('showDebug').checked;
+            const btn = document.getElementById('queryBtn');
+            const loader = document.getElementById('queryLoader');
+            const resultDiv = document.getElementById('queryResult');
+
+            if (!question.trim()) { showToast('Please enter a question', 'error'); return; }
+
+            btn.disabled = true; loader.style.display = 'block'; resultDiv.style.display = 'none';
+
+            try {
+                const res = await fetch('/rag/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, type, chunks, debug }),
+                });
+                const json = await res.json();
+
+                if (json.success) {
+                    const d = json.data;
+                    document.getElementById('answerContent').textContent = d.answer;
+
+                    const tokenBadge = document.getElementById('tokenBadge');
+                    if (d.tokens) { tokenBadge.style.display = 'flex'; document.getElementById('tokenCount').textContent = d.tokens.toLocaleString(); }
+                    else { tokenBadge.style.display = 'none'; }
+
+                    const rwInfo = document.getElementById('rewriteInfo');
+                    if (d.rewritten_query) { rwInfo.style.display = 'block'; document.getElementById('rewriteText').textContent = d.rewritten_query; }
+                    else { rwInfo.style.display = 'none'; }
+
+                    const chunksC = document.getElementById('chunksContainer');
+                    const chunksL = document.getElementById('chunksList');
+                    if (d.chunks && d.chunks.length > 0) {
+                        chunksC.style.display = 'block';
+                        chunksL.innerHTML = d.chunks.map(c => `<div class="chunk">${c}</div>`).join('');
+                    } else { chunksC.style.display = 'none'; }
+
+                    const debugC = document.getElementById('debugContainer');
+                    const debugL = document.getElementById('debugContent');
+                    if (d.debug_info) {
+                        debugC.style.display = 'block';
+                        debugL.textContent = JSON.stringify(d.debug_info, null, 2);
+                    } else { debugC.style.display = 'none'; }
+
+                    resultDiv.style.display = 'block';
+                } else { showToast('Error: ' + json.message, 'error'); }
+            } catch (e) { console.error(e); showToast('Failed to fetch answer.', 'error'); }
+            finally { btn.disabled = false; loader.style.display = 'none'; }
+        }
+
+        // ═══════════════════ UPLOAD LOGIC ═══════════════════
+        let selectedFiles = [];
+
+        // Drop zone events
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            addFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
+
+        function addFiles(fileList) {
+            for (const f of fileList) {
+                if (selectedFiles.length >= 3) { showToast('Maximum 3 files allowed', 'error'); break; }
+                if (!selectedFiles.find(sf => sf.name === f.name && sf.size === f.size)) {
+                    selectedFiles.push(f);
+                }
+            }
+            renderFileList();
+        }
+
+        function removeFile(idx) { selectedFiles.splice(idx, 1); renderFileList(); }
+
+        function renderFileList() {
+            const list = document.getElementById('fileList');
+            if (selectedFiles.length === 0) { list.innerHTML = ''; return; }
+            list.innerHTML = selectedFiles.map((f, i) => `
+                <div class="file-item">
+                    <span class="file-icon">&#128196;</span>
+                    <span class="file-name">${f.name}</span>
+                    <span class="file-size">${(f.size / 1024).toFixed(1)} KB</span>
+                    <button class="file-remove" onclick="removeFile(${i})">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        // Domain change → show/hide creation_date required marker
+        function onDomainChange() {
+            const domain = document.getElementById('uploadDomain').value;
+            document.getElementById('dateRequired').style.display = domain === 'policy' ? 'inline' : 'none';
+        }
+
+        async function submitUpload() {
+            const domain = document.getElementById('uploadDomain').value;
+            const creationDate = document.getElementById('creationDate').value;
+            const isLegacy = document.getElementById('isLegacy').checked;
+            const status = document.getElementById('uploadStatus').value;
+            const department = document.getElementById('department').value;
+            const projectCodename = document.getElementById('projectCodename').value;
+            const btn = document.getElementById('uploadBtn');
+            const loader = document.getElementById('uploadLoader');
+
+            if (selectedFiles.length === 0) { showToast('Please select at least one file', 'error'); return; }
+            if (domain === 'policy' && !creationDate) { showToast('Creation date is required for policy documents', 'error'); return; }
+
+            const formData = new FormData();
+            selectedFiles.forEach(f => formData.append('files', f));
+            formData.append('domain', domain);
+            if (creationDate) formData.append('creation_date', creationDate);
+            formData.append('isLegacy', isLegacy);
+            formData.append('status', status);
+            if (department) formData.append('department', department);
+            if (projectCodename) formData.append('project_codename', projectCodename);
+
+            btn.disabled = true; loader.style.display = 'block';
+
+            try {
+                const res = await fetch('/ingest', { method: 'POST', body: formData });
+                const json = await res.json();
+                if (json.success) {
+                    showToast('Files submitted for processing!', 'success');
+                    selectedFiles = []; renderFileList();
+                    document.getElementById('creationDate').value = '';
+                    document.getElementById('department').value = '';
+                    document.getElementById('projectCodename').value = '';
+                    document.getElementById('isLegacy').checked = false;
+                } else {
+                    showToast('Upload failed: ' + (json.message || 'Unknown error'), 'error');
+                }
+            } catch (e) { console.error(e); showToast('Upload request failed.', 'error'); }
+            finally { btn.disabled = false; loader.style.display = 'none'; }
+        }
+
+        // Init
+        onDomainChange();
+        if (window.location.pathname.endsWith('/upload')) {
+            switchTab('upload');
+        }
+    </script>
+</body>
+</html>
